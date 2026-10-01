@@ -101,6 +101,9 @@ a{color:var(--run)}
       <p><b>The four DORA metrics</b>: deployment frequency, lead time for changes, change failure rate, time to restore service.</p>
       <p><b>Blue/green</b>: two identical environments; switch traffic when the new one is healthy. <b>Canary</b>: send a small slice of traffic to the new version first.</p>
       <p><b>Infrastructure as code</b>: servers and networks described in files (Terraform, Pulumi, CloudFormation), reviewed and versioned like any other code.</p>
+      <p><b>GitOps</b>: Git holds the desired state; automation reconciles reality to match. <b>Trunk-based development</b>: small, short-lived branches merged to main often.</p>
+      <p><b>SLO</b>: your reliability target. <b>Error budget</b>: the unreliability the SLO allows; spend it on releases, stop when it is gone. <b>Blameless post-mortems</b>: ask how the system allowed it.</p>
+      <p><b>Immutable infrastructure</b>: replace, never patch in place. <b>Readiness</b> says "send me traffic"; <b>liveness</b> says "restart me".</p>
       <p><b>Observability</b>: logs, metrics and traces, so you can ask new questions about a running system.</p>
       <p><b>Idempotent</b>: running it twice has the same result as running it once. This is the property you want in every deploy step.</p>
     </div>
@@ -141,7 +144,7 @@ $("break").addEventListener("click", () => { willBreak = true; run(); });
 $("undo").addEventListener("click", () => { ver = Math.max(1, ver - 1); reset(); $("log").textContent = ""; line("$ git revert HEAD && git push", "l-run"); line("rolled back. v" + ver + " is live again.", "l-ok"); $("state").textContent = "live · v" + ver; $("undo").disabled = ver === 1; });
 
 // quiz: each answer comes with the reason, because the reason is the learning
-const Q = [
+const POOL = [
   ["What does CI stand for?", ["Continuous Integration", "Code Inspection", "Cloud Infrastructure", "Containerised Images"], 0, "Continuous Integration: merging small changes often and building and testing each one automatically."],
   ["Which is NOT one of the four DORA metrics?", ["Deployment frequency", "Lead time for changes", "Lines of code written", "Change failure rate"], 2, "The four are deployment frequency, lead time for changes, change failure rate and time to restore service. Lines of code isn't one."],
   ["A deploy step is 'idempotent'. What does that mean?", ["It runs very fast", "Running it twice gives the same result as once", "It needs no permissions", "It only works once"], 1, "Idempotent operations are safe to retry, which is exactly what you want when a pipeline fails halfway."],
@@ -154,7 +157,23 @@ const Q = [
   ["Why keep secrets out of the repository?", ["They make the repo large", "Anyone with repo access, now or in history, can read them", "Git cannot store text", "It is faster"], 1, "Secrets in git live in history forever. Use a secrets manager or CI secrets, and rotate any that leaked."],
   ["What does 'shift left' mean?", ["Move servers to another region", "Test and secure earlier in the pipeline", "Deploy on Mondays", "Use less memory"], 1, "Catch problems earlier (nearer the developer, further left on the timeline), where they are cheaper to fix."],
   ["Which HTTP status best signals 'service temporarily unavailable'?", ["200", "301", "404", "503"], 3, "503 means the service can't handle the request right now, which load balancers and health checks rely on."],
+  ["What is the core idea of GitOps?", ["Git is the single source of truth for the desired state, and automation makes reality match it", "Every developer must use the Git GUI", "Servers are edited by hand, then committed", "Git replaces your CI server"], 0, "In GitOps the desired state of the system lives in Git. A controller continually reconciles the running system to match, so changes are reviewed, versioned and reversible."],
+  ["In Kubernetes, what is a Pod?", ["A cluster of servers", "The smallest deployable unit: one or more containers sharing network and storage", "A type of database", "A load balancer"], 1, "A Pod wraps one or more tightly coupled containers that share a network namespace and volumes. You usually manage Pods through a Deployment, not directly."],
+  ["What makes a test 'flaky'?", ["It runs slowly", "It sometimes passes and sometimes fails with no code change", "It tests too many things", "It has no assertions"], 1, "Flaky tests destroy trust in CI: people start re-running instead of investigating. Quarantine them, find the cause (timing, shared state, network), then fix or delete."],
+  ["What is an SLO?", ["A server license", "A target for reliability, such as 99.9% of requests succeeding", "A type of log file", "A deployment strategy"], 1, "A Service Level Objective is the reliability target you aim for. It's measured by SLIs (the actual numbers) and may back an SLA (a promise with consequences)."],
+  ["What is an 'error budget'?", ["Money set aside for outages", "The amount of unreliability your SLO allows, spent on releases and risk", "A limit on log messages", "The size of your bug backlog"], 1, "If the SLO is 99.9%, the remaining 0.1% is your budget. Plenty left means ship faster; spent means slow down and fix reliability."],
+  ["What does 'immutable infrastructure' mean?", ["Servers can never be turned off", "You replace servers with new, freshly built ones instead of patching them in place", "Code can't be changed after merge", "Only one person has root"], 1, "Rather than log in and tweak a running box (and drift from what's documented), you build a new image and roll it out. Rolling back is redeploying the old image."],
+  ["Where should a CI pipeline get its secrets from?", ["A file committed to the repo", "The CI system's encrypted secrets or a secrets manager, injected at runtime", "A shared spreadsheet", "Hard-coded in the Dockerfile"], 1, "Keep secrets out of code and images. Inject them at run time from an encrypted store, scope them narrowly and rotate them."],
+  ["What does 'terraform plan' do?", ["Applies changes immediately", "Shows what would change, without changing anything", "Destroys all resources", "Formats the code"], 1, "plan compares your code with the real world and prints the proposed changes. Review it (ideally in a pull request) before you apply."],
+  ["Why commit a lockfile such as package-lock.json?", ["It makes the repo smaller", "It pins exact dependency versions so builds are reproducible", "It encrypts dependencies", "It speeds up git"], 1, "Without a lockfile, 'works on my machine' can mean 'I got different transitive versions than CI did'. Pinned versions make builds repeatable."],
+  ["What is trunk-based development?", ["Keeping a long-lived branch per team", "Working in small, short-lived branches that merge to main often", "Never using branches", "Releasing once a year"], 1, "Merging small changes often keeps integration pain low and makes continuous delivery realistic. Feature flags hide unfinished work."],
+  ["What is the point of a blameless post-mortem?", ["To find who to discipline", "To learn how the system and process allowed the failure, and fix those", "To write a legal record", "To avoid fixing the bug"], 1, "People rarely fail alone; the system let it happen. Blame makes people hide problems. Asking 'how did our setup make this easy to do?' finds fixes that last."],
+  ["A readiness probe fails on a container. What should the platform do?", ["Restart it immediately", "Stop sending it traffic until it passes again", "Delete the node", "Ignore it"], 1, "Readiness says 'don't route requests to me yet'. A liveness probe is the one that says 'restart me'. Mixing them up causes needless restarts or traffic to dead pods."],
 ];
+let Q = [];
+const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+// deal 12 random questions, and shuffle each question's options so the right answer isn't always in the same place
+const deal = () => { Q = shuffle(POOL).slice(0, 12).map(([t, o, ans, why]) => { const order = shuffle(o.map((_, i) => i)); return [t, order.map((i) => o[i]), order.indexOf(ans), why]; }); };
 let qi = 0, qs = 0, answered = false, best = 0; try { best = +localStorage.getItem("dredevops.best") || 0; } catch (e) { /* storage may be blocked */ }
 function showQ() {
   const [q, opts, ans] = Q[qi]; answered = false;
@@ -172,8 +191,8 @@ $("qnext").addEventListener("click", () => { qi++; if (qi < Q.length) return sho
   $("qbar").style.width = "100%"; $("qopts").innerHTML = ""; $("qwhy").hidden = true; $("qnext").hidden = true; $("qrestart").hidden = false;
   $("qq").innerHTML = '<span class="score">' + qs + "/" + Q.length + "</span> " + (qs >= 10 ? "Sharp. You know this." : qs >= 7 ? "Solid. A few gaps to fill." : "Good start. Read the Notes tab and go again.");
   $("qbest").textContent = "Best: " + best + "/" + Q.length; });
-$("qrestart").addEventListener("click", () => { qi = 0; qs = 0; showQ(); });
-showQ();
+$("qrestart").addEventListener("click", () => { deal(); qi = 0; qs = 0; showQ(); });
+deal(); showQ();
 
 // news: public, CORS-enabled feeds, fetched in your browser when you open the tab
 let newsLoaded = false;
