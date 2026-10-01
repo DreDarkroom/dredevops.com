@@ -3,88 +3,189 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>dredevops | ship small, ship often</title>
-<meta name="description" content="How my sites go from an idea to the internet: one git push, a few seconds of checks, and a one-step undo.">
+<title>dredevops | a DevOps playground</title>
+<meta name="description" content="A DevOps playground: pipelines to push and break, a quiz to test what you know, and live DevOps news.">
 <style>
-:root{--bg:#0a0e14;--panel:#111823;--line:#1f2a3a;--ink:#dce6f2;--dim:#7f90a8;--ok:#3ddc97;--run:#5aa9ff;--bad:#ff6b6b}
+:root{--bg:#0a0e14;--panel:#111823;--line:#1f2a3a;--ink:#dce6f2;--dim:#7f90a8;--ok:#3ddc97;--run:#5aa9ff;--bad:#ff6b6b;--warn:#ffcf5a}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 ui-monospace,"Cascadia Mono",Consolas,monospace}
-.wrap{max-width:60rem;margin:0 auto;padding:2rem 1.1rem 4rem}
-h1{font-size:clamp(1.8rem,5vw,2.8rem);line-height:1.1;margin:0 0 .5rem;letter-spacing:-.03em}
-h1 b{color:var(--ok)}
-.sub{color:var(--dim);margin:0 0 1.6rem;max-width:38rem}
-button{font:inherit;cursor:pointer;color:#04140c;background:var(--ok);border:0;border-radius:.4rem;padding:.7rem 1.2rem;font-weight:800;min-height:2.8rem}
-button.alt{background:var(--panel);color:var(--ink);border:1px solid var(--line);font-weight:600}
-button:disabled{opacity:.55;cursor:default}
+.wrap{max-width:62rem;margin:0 auto;padding:1.4rem 1.1rem 4rem}
+header{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
+h1{font-size:clamp(1.7rem,5vw,2.6rem);line-height:1.1;margin:0;letter-spacing:-.03em}h1 b{color:var(--ok)}
+nav{display:flex;gap:.4rem;flex-wrap:wrap}
+nav button{font:inherit;cursor:pointer;color:var(--dim);background:transparent;border:1px solid var(--line);border-radius:.4rem;padding:.5rem .9rem;min-height:2.6rem}
+nav button[aria-selected=true]{color:#04140c;background:var(--ok);border-color:var(--ok);font-weight:800}
+.sub{color:var(--dim);margin:0 0 1.2rem;max-width:42rem}
+button.act{font:inherit;cursor:pointer;color:#04140c;background:var(--ok);border:0;border-radius:.4rem;padding:.7rem 1.2rem;font-weight:800;min-height:2.8rem}
+button.alt{font:inherit;cursor:pointer;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:.4rem;padding:.7rem 1.1rem;min-height:2.8rem}
+button:disabled{opacity:.5;cursor:default}
 :focus-visible{outline:2px solid var(--run);outline-offset:3px}
-.pipe{display:grid;grid-template-columns:repeat(5,1fr);gap:.5rem;margin:1.4rem 0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:.6rem;padding:1.1rem}
+.pipe{display:grid;grid-template-columns:repeat(5,1fr);gap:.5rem;margin:1.2rem 0}
 @media(max-width:640px){.pipe{grid-template-columns:1fr}}
 .st{background:var(--panel);border:1px solid var(--line);border-radius:.5rem;padding:.8rem;position:relative;overflow:hidden}
 .st h3{margin:0 0 .2rem;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
-.st .s{font-size:.95rem}
 .st i{position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--run)}
-.st.run{border-color:var(--run)}.st.run i{width:100%;transition:width var(--d,1s) linear}
+.st.run{border-color:var(--run)}.st.run i{width:100%;transition:width .9s linear}
 .st.ok{border-color:var(--ok)}.st.ok h3{color:var(--ok)}.st.ok i{width:100%;background:var(--ok)}
 .st.bad{border-color:var(--bad)}.st.bad h3{color:var(--bad)}
-pre{background:#05080d;border:1px solid var(--line);border-radius:.5rem;padding:1rem;margin:0;min-height:13rem;max-height:18rem;overflow:auto;font-size:.88rem;white-space:pre-wrap}
-.l-ok{color:var(--ok)}.l-dim{color:var(--dim)}.l-run{color:var(--run)}
-.row{display:flex;gap:.7rem;flex-wrap:wrap;margin:1rem 0}
-.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-top:2rem}
+pre{background:#05080d;border:1px solid var(--line);border-radius:.5rem;padding:1rem;margin:0;min-height:12rem;max-height:17rem;overflow:auto;font-size:.88rem;white-space:pre-wrap}
+.l-ok{color:var(--ok)}.l-dim{color:var(--dim)}.l-run{color:var(--run)}.l-bad{color:var(--bad)}
+.row{display:flex;gap:.7rem;flex-wrap:wrap;margin:1rem 0;align-items:center}
+.opt{display:flex;gap:.7rem;align-items:flex-start;width:100%;text-align:left;font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:.5rem;padding:.8rem 1rem;margin:.5rem 0;cursor:pointer;min-height:3rem}
+.opt:hover{border-color:var(--run)}
+.opt.right{border-color:var(--ok);background:#0f2a1f}.opt.wrong{border-color:var(--bad);background:#2a1214}
+.opt kbd{border:1px solid var(--line);border-radius:.3rem;padding:0 .45rem;color:var(--dim);flex:none}
+.why{margin:.8rem 0 0;padding:.8rem 1rem;border-left:3px solid var(--run);background:#0c1420;color:#c8d6ea}
+.bar{height:8px;background:#0a1018;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:.6rem 0 1.2rem}.bar div{height:100%;background:var(--ok);width:0}
+.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-top:1rem}
 @media(max-width:700px){.cols{grid-template-columns:1fr}}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:.5rem;padding:1rem}
-.card h2{font-size:1rem;margin:0 0 .4rem;color:var(--ok)}
-.card p{margin:0;color:var(--dim);font-size:.92rem}
+.card h2{font-size:1rem;margin:0 0 .4rem;color:var(--ok)}.card p{margin:0;color:var(--dim);font-size:.92rem}
+ul.news{list-style:none;margin:0;padding:0;display:grid;gap:.6rem}
+ul.news li{background:var(--panel);border:1px solid var(--line);border-radius:.5rem;padding:.8rem 1rem}
+ul.news a{color:var(--run);text-decoration:none;font-weight:700}ul.news a:hover{text-decoration:underline}
+ul.news small{display:block;color:var(--dim)}
+.score{font-size:2.4rem;font-weight:800;color:var(--ok)}
+.badge{display:inline-block;margin:.2rem 0;padding:.2rem .6rem;border:1px solid var(--ok);color:var(--ok);border-radius:2rem;font-size:.8rem}
 a{color:var(--run)}
-.badge{display:inline-block;margin-top:1rem;padding:.2rem .6rem;border:1px solid var(--ok);color:var(--ok);border-radius:2rem;font-size:.8rem}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>dre<b>devops</b></h1>
-  <p class="sub">Ship small, ship often, and always keep a way back. This is how my sites reach the internet. Press the button; nothing here is faked except the speed.</p>
-  <div class="row"><button id="ship">git push</button><button class="alt" id="break">Push a bug on purpose</button><button class="alt" id="undo" disabled>Rollback</button></div>
-  <div class="pipe" id="pipe"></div>
-  <pre id="log" aria-live="polite" aria-label="Deployment log"><span class="l-dim">waiting for a push...</span></pre>
-  <span class="badge" id="state">live &middot; v1</span>
+  <header>
+    <h1>dre<b>devops</b></h1>
+    <nav role="tablist" aria-label="Sections">
+      <button role="tab" aria-selected="true" data-t="pipe">Pipeline</button>
+      <button role="tab" aria-selected="false" data-t="quiz">Quiz</button>
+      <button role="tab" aria-selected="false" data-t="news">News</button>
+      <button role="tab" aria-selected="false" data-t="notes">Notes</button>
+    </nav>
+  </header>
+  <p class="sub">A playground for learning DevOps: push things, break things, test yourself. I used to do this for a living and I'm learning it properly again, in public.</p>
 
-  <div class="cols">
-    <div class="card"><h2>No build step</h2><p>Plain HTML and ES modules. What I write is what ships, so there's very little to break.</p></div>
-    <div class="card"><h2>Push to deploy</h2><p>A <code>git push</code> publishes to GitHub Pages in a minute or two. No servers to patch.</p></div>
-    <div class="card"><h2>One-step undo</h2><p>Every release is a commit, so rolling back is <code>git revert</code>, not a panic.</p></div>
-  </div>
-  <p class="sub" style="margin-top:2rem">Building something? See more at <a href="https://dredarkroom.com/">Dre Darkroom</a>.</p>
+  <!-- PIPELINE -->
+  <section id="t-pipe" role="tabpanel">
+    <div class="row"><button class="act" id="ship">git push</button><button class="alt" id="break">Push a bug on purpose</button><button class="alt" id="undo" disabled>Rollback</button><span class="badge" id="state">live &middot; v1</span></div>
+    <div class="pipe" id="pipe"></div>
+    <pre id="log" aria-live="polite" aria-label="Deployment log"><span class="l-dim">waiting for a push...</span></pre>
+    <div class="cols">
+      <div class="panel card"><h2>CI</h2><p>Every push is built and tested automatically. A failing test blocks the release.</p></div>
+      <div class="panel card"><h2>CD</h2><p>If the checks pass, the release goes out without a human clicking "deploy".</p></div>
+      <div class="panel card"><h2>Rollback</h2><p>Every release is a commit, so undoing one is a revert, not a panic.</p></div>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="t-quiz" role="tabpanel" hidden>
+    <div class="panel">
+      <div class="row" style="margin-top:0"><span id="qn">Question 1</span><span style="margin-left:auto" id="qs">Score 0</span></div>
+      <div class="bar"><div id="qbar"></div></div>
+      <h2 id="qq" style="margin:.2rem 0 .6rem;font-size:1.15rem"></h2>
+      <div id="qopts"></div>
+      <div id="qwhy" class="why" hidden></div>
+      <div class="row"><button class="act" id="qnext" hidden>Next</button><button class="alt" id="qrestart" hidden>Go again</button><span id="qbest" class="l-dim"></span></div>
+    </div>
+  </section>
+
+  <!-- NEWS -->
+  <section id="t-news" role="tabpanel" hidden>
+    <p class="sub" style="margin-bottom:.8rem">Live from public feeds (Hacker News and DEV). Loaded when you open this tab.</p>
+    <ul class="news" id="newsList"><li class="l-dim">Press the News tab to load.</li></ul>
+  </section>
+
+  <!-- NOTES -->
+  <section id="t-notes" role="tabpanel" hidden>
+    <div class="panel" style="line-height:1.8">
+      <h2 style="margin-top:0;color:var(--ok)">Cheat sheet</h2>
+      <p><b>CI</b>: merge small changes often, build and test on every push. <b>CD</b>: deploy automatically once checks pass.</p>
+      <p><b>The four DORA metrics</b>: deployment frequency, lead time for changes, change failure rate, time to restore service.</p>
+      <p><b>Blue/green</b>: two identical environments; switch traffic when the new one is healthy. <b>Canary</b>: send a small slice of traffic to the new version first.</p>
+      <p><b>Infrastructure as code</b>: servers and networks described in files (Terraform, Pulumi, CloudFormation), reviewed and versioned like any other code.</p>
+      <p><b>Observability</b>: logs, metrics and traces, so you can ask new questions about a running system.</p>
+      <p><b>Idempotent</b>: running it twice has the same result as running it once. This is the property you want in every deploy step.</p>
+    </div>
+  </section>
 </div>
+
 <script>
-const STAGES = ["commit", "build", "test", "deploy", "live"], $ = (id) => document.getElementById(id);
-const LOG = {
-  commit: ["$ git add -A && git commit -m \"small, honest change\"", "$ git push origin main"],
-  build: ["no build step. nothing to compile.", "static files only."],
-  test: ["running smoke tests...", "page loads: ok", "no console errors: ok", "links resolve: ok"],
-  deploy: ["publishing to the edge...", "cache warmed."],
-  live: ["live. rollback available: git revert HEAD"],
-};
-let ver = 1, busy = false, prev = 1, willBreak = false;
-const pipe = $("pipe");
-STAGES.forEach((s) => { pipe.insertAdjacentHTML("beforeend", `<div class="st" data-s="${s}"><h3>${s}</h3><div class="s">idle</div><i></i></div>`); });
+const $ = (id) => document.getElementById(id), wait = (ms) => new Promise((r) => setTimeout(r, ms));
+// tabs
+document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll("nav button").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
+  ["pipe", "quiz", "news", "notes"].forEach((t) => ($("t-" + t).hidden = t !== b.dataset.t));
+  if (b.dataset.t === "news" && !newsLoaded) loadNews();
+}));
+
+// pipeline: push, break, roll back
+const STAGES = ["commit", "build", "test", "deploy", "live"];
+const LOG = { commit: ["$ git add -A && git commit -m \"small, honest change\"", "$ git push origin main"], build: ["resolving dependencies...", "bundling... done."], test: ["running unit tests...", "running smoke tests...", "page loads: ok", "no console errors: ok"], deploy: ["publishing to the edge...", "cache warmed."], live: ["live. rollback available: git revert HEAD"] };
+let ver = 1, busy = false, willBreak = false; const pipe = $("pipe");
+STAGES.forEach((s) => pipe.insertAdjacentHTML("beforeend", `<div class="st" data-s="${s}"><h3>${s}</h3><div>idle</div><i></i></div>`));
 const el = (s) => pipe.querySelector(`[data-s="${s}"]`);
-const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-const line = (t, c = "") => { const l = $("log"); l.insertAdjacentHTML("beforeend", `\n<span class="${c}">${t}</span>`); l.scrollTop = l.scrollHeight; };
-const reset = () => STAGES.forEach((s) => { el(s).className = "st"; el(s).querySelector(".s").textContent = "idle"; });
+const line = (t, c = "") => { const l = $("log"); l.insertAdjacentHTML("beforeend", `\n<span class="${c}"></span>`); l.lastElementChild.textContent = t; l.scrollTop = l.scrollHeight; };
+const reset = () => STAGES.forEach((s) => { el(s).className = "st"; el(s).children[1].textContent = "idle"; });
+const lock = (on) => { $("ship").disabled = $("break").disabled = on; $("undo").disabled = on || ver === 1; };
 async function run() {
-  if (busy) return; busy = true; $("ship").disabled = $("break").disabled = $("undo").disabled = true; reset(); $("log").textContent = "";
+  if (busy) return; busy = true; lock(true); reset(); $("log").textContent = "";
   for (const s of STAGES) {
-    const e = el(s); e.classList.add("run"); e.style.setProperty("--d", "0.9s"); e.querySelector(".s").textContent = "running";
+    const e = el(s); e.classList.add("run"); e.children[1].textContent = "running";
     for (const t of LOG[s]) { line(t, t.startsWith("$") ? "l-run" : "l-dim"); await wait(260); }
-    await wait(500);
-    if (s === "test" && willBreak) { e.className = "st bad"; e.querySelector(".s").textContent = "failed"; line("TypeError: cannot read properties of undefined", "l-dim"); line("tests failed. deploy blocked. nothing broke in production.", ""); $("state").textContent = "live · v" + ver + " (still safe)"; willBreak = false; busy = false; $("ship").disabled = $("break").disabled = false; $("undo").disabled = ver === 1; return; }
-    e.className = "st ok"; e.querySelector(".s").textContent = "done";
+    await wait(450);
+    if (s === "test" && willBreak) { e.className = "st bad"; e.children[1].textContent = "failed"; line("TypeError: cannot read properties of undefined", "l-bad"); line("tests failed. deploy blocked. production is untouched.", "l-ok"); willBreak = false; busy = false; lock(false); return; }
+    e.className = "st ok"; e.children[1].textContent = "done";
   }
-  prev = ver; ver++; $("state").textContent = "live · v" + ver; line("v" + ver + " is live.", "l-ok");
-  busy = false; $("ship").disabled = $("break").disabled = false; $("undo").disabled = false;
+  ver++; $("state").textContent = "live · v" + ver; line("v" + ver + " is live.", "l-ok"); busy = false; lock(false);
 }
 $("ship").addEventListener("click", run);
 $("break").addEventListener("click", () => { willBreak = true; run(); });
 $("undo").addEventListener("click", () => { ver = Math.max(1, ver - 1); reset(); $("log").textContent = ""; line("$ git revert HEAD && git push", "l-run"); line("rolled back. v" + ver + " is live again.", "l-ok"); $("state").textContent = "live · v" + ver; $("undo").disabled = ver === 1; });
+
+// quiz: each answer comes with the reason, because the reason is the learning
+const Q = [
+  ["What does CI stand for?", ["Continuous Integration", "Code Inspection", "Cloud Infrastructure", "Containerised Images"], 0, "Continuous Integration: merging small changes often and building and testing each one automatically."],
+  ["Which is NOT one of the four DORA metrics?", ["Deployment frequency", "Lead time for changes", "Lines of code written", "Change failure rate"], 2, "The four are deployment frequency, lead time for changes, change failure rate and time to restore service. Lines of code isn't one."],
+  ["A deploy step is 'idempotent'. What does that mean?", ["It runs very fast", "Running it twice gives the same result as once", "It needs no permissions", "It only works once"], 1, "Idempotent operations are safe to retry, which is exactly what you want when a pipeline fails halfway."],
+  ["In a blue/green deployment, what do you do to release?", ["Restart the server", "Switch traffic to the new, healthy environment", "Delete the old code", "Email the team"], 1, "Two identical environments run side by side; you move traffic across, and rolling back is moving it back."],
+  ["What is a 'canary' release?", ["A release only on Fridays", "Sending a small share of traffic to the new version first", "A failed deploy", "A release with no tests"], 1, "A canary exposes a few users to the change first, so a problem hurts few people and you notice early."],
+  ["Terraform is mainly used for what?", ["Writing unit tests", "Describing infrastructure as code", "Monitoring logs", "Building containers"], 1, "Terraform describes cloud resources in files that are reviewed and versioned like application code."],
+  ["Which Git command undoes a published commit safely by creating a new one?", ["git reset --hard", "git revert", "git rm", "git stash"], 1, "git revert adds a new commit that reverses an earlier one, so shared history is not rewritten."],
+  ["The three pillars of observability are...", ["Logs, metrics, traces", "CPU, RAM, disk", "Dev, test, prod", "Build, ship, run"], 0, "Logs (events), metrics (numbers over time) and traces (a request's path) let you ask new questions of a live system."],
+  ["What does a Docker image contain?", ["Only the application source", "A layered filesystem plus metadata to run a container", "A virtual machine's BIOS", "A running process"], 1, "An image is an immutable, layered filesystem and config. A container is a running instance of it."],
+  ["Why keep secrets out of the repository?", ["They make the repo large", "Anyone with repo access, now or in history, can read them", "Git cannot store text", "It is faster"], 1, "Secrets in git live in history forever. Use a secrets manager or CI secrets, and rotate any that leaked."],
+  ["What does 'shift left' mean?", ["Move servers to another region", "Test and secure earlier in the pipeline", "Deploy on Mondays", "Use less memory"], 1, "Catch problems earlier (nearer the developer, further left on the timeline), where they are cheaper to fix."],
+  ["Which HTTP status best signals 'service temporarily unavailable'?", ["200", "301", "404", "503"], 3, "503 means the service can't handle the request right now, which load balancers and health checks rely on."],
+];
+let qi = 0, qs = 0, answered = false, best = 0; try { best = +localStorage.getItem("dredevops.best") || 0; } catch (e) { /* storage may be blocked */ }
+function showQ() {
+  const [q, opts, ans] = Q[qi]; answered = false;
+  $("qn").textContent = "Question " + (qi + 1) + " of " + Q.length; $("qs").textContent = "Score " + qs; $("qbar").style.width = (qi / Q.length * 100) + "%";
+  $("qq").textContent = q; $("qwhy").hidden = true; $("qnext").hidden = true; $("qrestart").hidden = true; $("qbest").textContent = best ? "Best: " + best + "/" + Q.length : "";
+  const box = $("qopts"); box.textContent = "";
+  opts.forEach((o, i) => { const b = document.createElement("button"); b.className = "opt"; b.type = "button"; b.innerHTML = "<kbd>" + "ABCD"[i] + "</kbd><span></span>"; b.lastChild.textContent = o;
+    b.addEventListener("click", () => { if (answered) return; answered = true; const ok = i === ans; if (ok) qs++;
+      [...box.children].forEach((c, j) => { c.classList.toggle("right", j === ans); if (j === i && !ok) c.classList.add("wrong"); });
+      $("qwhy").hidden = false; $("qwhy").textContent = (ok ? "Correct. " : "Not quite. ") + Q[qi][3]; $("qs").textContent = "Score " + qs; $("qnext").hidden = false; $("qnext").textContent = qi === Q.length - 1 ? "See result" : "Next"; $("qnext").focus(); });
+    box.appendChild(b); });
+}
+$("qnext").addEventListener("click", () => { qi++; if (qi < Q.length) return showQ();
+  best = Math.max(best, qs); try { localStorage.setItem("dredevops.best", best); } catch (e) { /* ignore */ }
+  $("qbar").style.width = "100%"; $("qopts").innerHTML = ""; $("qwhy").hidden = true; $("qnext").hidden = true; $("qrestart").hidden = false;
+  $("qq").innerHTML = '<span class="score">' + qs + "/" + Q.length + "</span> " + (qs >= 10 ? "Sharp. You know this." : qs >= 7 ? "Solid. A few gaps to fill." : "Good start. Read the Notes tab and go again.");
+  $("qbest").textContent = "Best: " + best + "/" + Q.length; });
+$("qrestart").addEventListener("click", () => { qi = 0; qs = 0; showQ(); });
+showQ();
+
+// news: public, CORS-enabled feeds, fetched in your browser when you open the tab
+let newsLoaded = false;
+async function loadNews() {
+  newsLoaded = true; const ul = $("newsList"); ul.innerHTML = '<li class="l-dim">Loading...</li>';
+  const out = [];
+  try { const r = await fetch("https://hn.algolia.com/api/v1/search?query=devops&tags=story&hitsPerPage=8"); const j = await r.json(); j.hits.forEach((h) => h.title && out.push({ t: h.title, u: h.url || "https://news.ycombinator.com/item?id=" + h.objectID, s: "Hacker News · " + (h.points || 0) + " points" })); } catch (e) { /* offline or blocked */ }
+  try { const r = await fetch("https://dev.to/api/articles?tag=devops&top=7&per_page=8"); const j = await r.json(); j.forEach((a) => out.push({ t: a.title, u: a.url, s: "DEV · " + a.public_reactions_count + " reactions" })); } catch (e) { /* offline or blocked */ }
+  ul.textContent = "";
+  if (!out.length) { ul.innerHTML = '<li class="l-dim">Couldn\'t reach the feeds just now. Try again in a moment.</li>'; newsLoaded = false; return; }
+  out.forEach((n) => { const li = document.createElement("li"); const a = document.createElement("a"); a.href = n.u; a.rel = "noopener"; a.textContent = n.t; const s = document.createElement("small"); s.textContent = n.s; li.append(a, s); ul.appendChild(li); });
+}
 </script>
 </body>
 </html>
